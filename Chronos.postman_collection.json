@@ -1,0 +1,125 @@
+{
+  "info": {
+    "name": "Chronos Job Scheduler APIs",
+    "_postman_id": "chronos-job-scheduler-collection",
+    "description": "Postman collection for testing Chronos Job Scheduler backend (Spring Boot + Quartz)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 - Register",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\",\n  \"email\": \"test@example.com\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+      }
+    },
+    {
+      "name": "2 - Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"testpass\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res && res.token) {",
+              "  pm.environment.set('token', res.token);",
+              "  console.log('Saved token to environment');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Create Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"backup-job\",\n  \"type\": \"SIMPLE_TASK\",\n  \"payload\": \"Run DB backup\",\n  \"scheduleType\": \"ONE_TIME\",\n  \"scheduledTime\": \"2025-09-20T12:30:00Z\",\n  \"maxRetries\": 3\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/jobs", "host": ["{{baseUrl}}"], "path": ["api", "jobs"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "const res = pm.response.json();",
+              "if (res && res.id) {",
+              "  pm.environment.set('jobId', res.id);",
+              "  pm.environment.set('ownerId', res.ownerId);",
+              "  console.log('Saved jobId and ownerId');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - List Jobs by Owner",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/api/jobs/user/{{ownerId}}", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "user", "{{ownerId}}"] }
+      }
+    },
+    {
+      "name": "5 - Get Job by ID",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/api/jobs/{{jobId}}", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "{{jobId}}"] }
+      }
+    },
+    {
+      "name": "6 - Reschedule Job",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"scheduleType\": \"CRON\",\n  \"cronExpression\": \"0 0/5 * * * ?\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/api/jobs/{{jobId}}/reschedule", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "{{jobId}}", "reschedule"] }
+      }
+    },
+    {
+      "name": "7 - Cancel Job",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/api/jobs/{{jobId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "{{jobId}}", "cancel"] }
+      }
+    },
+    {
+      "name": "8 - Executions",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{baseUrl}}/api/jobs/{{jobId}}/executions", "host": ["{{baseUrl}}"], "path": ["api", "jobs", "{{jobId}}", "executions"] }
+      }
+    }
+  ]
+}
