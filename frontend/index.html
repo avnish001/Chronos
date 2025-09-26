@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chronos API Tester</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; }
+        h2 { margin-top: 2rem; }
+        input, button, textarea { margin: .25rem 0; padding: .4rem; width: 100%; }
+        button { cursor: pointer; }
+        pre { background: #222; color: #0f0; padding: 1rem; overflow: auto; }
+    </style>
+</head>
+<body>
+<h1>Chronos API Tester</h1>
+
+<h2>Auth</h2>
+<input id="reg-username" placeholder="Username">
+<input id="reg-password" type="password" placeholder="Password">
+<input id="reg-email" placeholder="Email">
+<button onclick="register()">Register</button>
+
+<input id="login-username" placeholder="Username">
+<input id="login-password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+
+<h2>Jobs</h2>
+<textarea id="job-json" rows="6" placeholder='{"name":"demoJob","cron":"0/30 * * * * ?"}'></textarea>
+<button onclick="createJob()">Create Job</button>
+<input id="job-id" placeholder="Job ID for fetch/delete">
+<button onclick="getJob()">Get Job</button>
+<button onclick="deleteJob()">Delete Job</button>
+
+<h2>Output</h2>
+<pre id="out"></pre>
+
+<script>
+    const baseUrl = "http://localhost:8080";
+    let token = null;
+
+    function out(obj) {
+      document.getElementById('out').textContent =
+        typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+    }
+
+    async function api(path, options = {}) {
+      if (token) {
+        options.headers = options.headers || {};
+        options.headers['Authorization'] = 'Bearer ' + token;
+      }
+      const res = await fetch(baseUrl + path, options);
+      const data = await res.json().catch(async () => ({ raw: await res.text() }));
+      out(data);
+      return data;
+    }
+
+    // --- Auth ---
+    async function register() {
+      const body = {
+        username: document.getElementById('reg-username').value,
+        password: document.getElementById('reg-password').value,
+        email:    document.getElementById('reg-email').value
+      };
+      await api("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+    }
+
+    async function login() {
+      const body = {
+        username: document.getElementById('login-username').value,
+        password: document.getElementById('login-password').value
+      };
+      const res = await api("/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+      if (res.token) {
+        token = res.token;
+        out({ message: "Logged in", token });
+      }
+    }
+
+    // --- Jobs ---
+    async function createJob() {
+      const job = JSON.parse(document.getElementById('job-json').value);
+      await api("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(job)
+      });
+    }
+
+    async function getJob() {
+      await api("/api/jobs/" + document.getElementById('job-id').value);
+    }
+
+    async function deleteJob() {
+      await api("/api/jobs/" + document.getElementById('job-id').value, { method: "DELETE" });
+    }
+</script>
+</body>
+</html>
