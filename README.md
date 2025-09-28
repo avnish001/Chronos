@@ -130,7 +130,3 @@ public class NotificationService {
 }
 
 
-Author
-
-Avnish Kumar
-Email: avnish01kumar@gmail.com
